@@ -1,0 +1,8 @@
+{
+  "perplexity": 9.7206,
+  "total_memory_bytes": 13838323712,
+  "expert_memory_bytes": 12884901888,
+  "n_samples": 500,
+  "seq_len": 512,
+  "model": "allenai/OLMoE-1B-7B-0924"
+}

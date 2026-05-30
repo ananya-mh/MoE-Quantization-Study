@@ -1,0 +1,5 @@
+Variant,Perplexity,Expert Memory (MB),Delta PPL,Mem Savings
+FP16 Baseline,9.7206,12884.9,--,--
+INT8 All,9.7173,6459.2,+-0.0033,49.9%
+INT4 Uniform,10.2540,3422.6,+0.5334,73.4%
+Activation-Aware,9.8985,5462.8,+0.1779,57.6%

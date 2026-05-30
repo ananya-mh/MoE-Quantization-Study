@@ -1,0 +1,16 @@
+{
+  "int8_all": {
+    "perplexity": 9.7173,
+    "expert_memory_bytes": 6459228160
+  },
+  "int4_uniform": {
+    "perplexity": 10.254,
+    "expert_memory_bytes": 3422552064
+  },
+  "activation_aware": {
+    "perplexity": 9.8985,
+    "expert_memory_bytes": 5462818816,
+    "int8_experts": 688,
+    "int4_experts": 336
+  }
+}

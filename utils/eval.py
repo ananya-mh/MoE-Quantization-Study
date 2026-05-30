@@ -11,7 +11,7 @@ def load_wikitext2_slice(
     seq_len: int = 512,
 ) -> torch.Tensor:
     """Load WikiText-2 test split, tokenize, chunk into fixed-length sequences."""
-    dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+    dataset = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
     full_text = "\n\n".join([t for t in dataset["text"] if t.strip()])
     encodings = tokenizer(full_text, return_tensors="pt")
     input_ids = encodings["input_ids"].squeeze(0)
@@ -42,9 +42,11 @@ def evaluate_perplexity(
         for i in tqdm(range(0, n_samples, batch_size), desc="Evaluating perplexity"):
             batch = input_ids[i : i + batch_size].to(device)
             outputs = model(batch, labels=batch)
-            num_tokens = batch.numel() - batch.size(0)  # exclude first token per sequence
+            num_tokens = batch.numel() - batch.size(0)
             total_nll += outputs.loss.item() * num_tokens
             total_tokens += num_tokens
+            del outputs, batch
+            torch.cuda.empty_cache()
 
     avg_nll = total_nll / total_tokens
     perplexity = math.exp(avg_nll)

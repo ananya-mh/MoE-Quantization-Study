@@ -27,7 +27,7 @@ def main() -> None:
     )
 
     print("Loading WikiText-2 slice for profiling...")
-    input_ids = load_wikitext2_slice(tokenizer, n_samples=2, seq_len=512)
+    input_ids = load_wikitext2_slice(tokenizer, n_samples=10, seq_len=512)
     print(f"Profiling on {input_ids.size(0)} sequences ({input_ids.numel()} tokens)\n")
 
     print("Profiling expert activations...")

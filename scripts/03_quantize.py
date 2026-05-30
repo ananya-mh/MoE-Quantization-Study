@@ -4,6 +4,9 @@ import gc
 import json
 import os
 import sys
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import torch
 from functools import partial
 from tqdm import tqdm
@@ -22,6 +25,10 @@ MODEL_NAME = "allenai/OLMoE-1B-7B-0924"
 
 
 def _load_model():
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
     return AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
         torch_dtype=torch.float16,
@@ -152,25 +159,26 @@ def main() -> None:
     baseline_ppl = baseline["perplexity"]
     print(f"Baseline perplexity: {baseline_ppl:.4f}")
 
-    print("Loading tokenizer...")
+    print("Loading tokenizer and eval data...")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    print("Loading WikiText-2 slice...")
     input_ids = load_wikitext2_slice(tokenizer, n_samples=500, seq_len=512)
+    del tokenizer
+    gc.collect()
     print(f"Loaded {input_ids.size(0)} sequences\n")
 
     results = {}
 
     # Variant 1: INT8
-    results["int8_all"] = run_int8_all(tokenizer, input_ids)
+    results["int8_all"] = run_int8_all(None, input_ids)
     if results["int8_all"]["perplexity"] > baseline_ppl + 2.0:
         print(f"\n!!! WARNING: INT8 perplexity ({results['int8_all']['perplexity']:.4f}) "
               f"is >{baseline_ppl + 2.0:.4f} (baseline + 2). Possible quantization bug! !!!")
 
     # Variant 2: Uniform INT4
-    results["int4_uniform"] = run_int4_uniform(tokenizer, input_ids)
+    results["int4_uniform"] = run_int4_uniform(None, input_ids)
 
     # Variant 3: Activation-aware
-    results["activation_aware"] = run_activation_aware(tokenizer, input_ids)
+    results["activation_aware"] = run_activation_aware(None, input_ids)
 
     # Save results
     os.makedirs("results", exist_ok=True)

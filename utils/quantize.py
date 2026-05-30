@@ -5,10 +5,11 @@ from typing import Callable
 
 def quantize_int8(weight: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Per-channel (per-row) symmetric INT8 quantization."""
-    abs_max = weight.abs().amax(dim=1)
+    w = weight.float()
+    abs_max = w.abs().amax(dim=1)
     scales = abs_max / 127.0
     scales = scales.clamp(min=1e-10)
-    quantized = (weight / scales.unsqueeze(1)).round().clamp(-127, 127).to(torch.int8)
+    quantized = (w / scales.unsqueeze(1)).round().clamp(-127, 127).to(torch.int8)
     return quantized, scales
 
 
@@ -18,10 +19,11 @@ def dequantize_int8(quantized: torch.Tensor, scales: torch.Tensor) -> torch.Tens
 
 def quantize_int4(weight: torch.Tensor, group_size: int = 128) -> tuple[torch.Tensor, torch.Tensor]:
     """Group-wise symmetric INT4 quantization along the input (column) dimension."""
-    out_dim, in_dim = weight.shape
+    w = weight.float()
+    out_dim, in_dim = w.shape
     assert in_dim % group_size == 0, f"in_dim {in_dim} not divisible by group_size {group_size}"
     num_groups = in_dim // group_size
-    grouped = weight.reshape(out_dim, num_groups, group_size)
+    grouped = w.reshape(out_dim, num_groups, group_size)
     abs_max = grouped.abs().amax(dim=2)
     scales = abs_max / 7.0
     scales = scales.clamp(min=1e-10)
@@ -55,11 +57,11 @@ def apply_quantization_to_expert(
 ) -> None:
     """Replace one expert's weights with simulated-quantized versions in-place."""
     with torch.no_grad():
-        gate_up = experts_module.gate_up_proj.data[expert_idx]
-        experts_module.gate_up_proj.data[expert_idx] = simulate_fn(gate_up)
+        gate_up = experts_module.gate_up_proj.data[expert_idx].cpu()
+        experts_module.gate_up_proj.data[expert_idx] = simulate_fn(gate_up).to(experts_module.gate_up_proj.device)
 
-        down = experts_module.down_proj.data[expert_idx]
-        experts_module.down_proj.data[expert_idx] = simulate_fn(down)
+        down = experts_module.down_proj.data[expert_idx].cpu()
+        experts_module.down_proj.data[expert_idx] = simulate_fn(down).to(experts_module.down_proj.device)
 
 
 def compute_expert_memory(experts_module: nn.Module, expert_idx: int, bit_width: int = 16) -> int:

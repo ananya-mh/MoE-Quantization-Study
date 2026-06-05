@@ -1,10 +1,10 @@
 # MoE Expert Quantization Study
 
-Activation-aware weight quantization for Mixture-of-Experts language models. This project profiles expert activation frequencies in OLMoE-1B-7B and tests whether allocating quantization precision based on usage patterns (hot experts at INT8, cold experts at INT4) preserves more quality than uniform quantization. All quantization is implemented from scratch using PyTorch — no external quantization libraries.
+Activation-aware weight quantization for Mixture-of-Experts language models. This project profiles expert activation frequencies in OLMoE-1B-7B and tests whether allocating quantization precision based on usage patterns (hot experts at INT8, cold experts at INT4) preserves more quality than uniform quantization. All quantization is implemented from scratch using PyTorch without external quantization libraries.
 
 ## How to Run
 
-Designed for Google Colab (free tier T4 GPU). Run each phase in order:
+Designed for Google Colab (T4 GPU). Run each phase in order:
 
 ```bash
 pip install torch transformers datasets matplotlib numpy tqdm
@@ -37,4 +37,4 @@ Or open `notebooks/colab_runner.ipynb` and run all cells.
 
 ## What I Found
 
-INT8 quantization of expert FFN weights is effectively lossless — perplexity is unchanged while halving expert memory. Uniform INT4 compresses 4x but costs 0.53 perplexity points. The activation-aware approach cuts this degradation by two-thirds (to 0.18 points) by keeping frequently-used "hot" experts at INT8 and only compressing rarely-used "cold" experts to INT4. Expert activation frequencies are highly non-uniform: a small subset of experts handles most tokens, which is exactly why differential precision allocation works. The takeaway is that profiling expert usage before quantizing is a low-cost way to get better quality-per-byte in MoE models.
+INT8 quantization of expert FFN weights is effectively lossless. The perplexity remains unchanged while halving expert memory. Uniform INT4 compresses 4x but costs 0.53 perplexity points. The activation-aware approach cuts this degradation by two-thirds (to 0.18 points) by keeping frequently-used "hot" experts at INT8 and only compressing rarely-used "cold" experts to INT4. Expert activation frequencies are highly non-uniform: a small subset of experts handles most tokens, which is exactly why differential precision allocation works. The takeaway is that profiling expert usage before quantizing is a low-cost way to get better quality per byte in MoE models.
